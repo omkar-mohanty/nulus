@@ -9,6 +9,7 @@ pub fn nullus_gui(ctx: &Context) {
         .resizable(true)
         .anchor(Align2::LEFT_TOP, [0.0, 0.0])
         .show(&ctx, |ui| {
+            if ui.add(egui::Button::new("Open")).clicked() {}
             ui.end_row();
 
             // proto_scene.egui(ui);
