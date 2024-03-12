@@ -1,6 +1,8 @@
 use egui::{Align2, Context};
 
-pub fn nullus_gui(ctx: &Context) {
+use crate::integration::Controller;
+
+pub fn nullus_gui(ctx: &Context, controller: &dyn Controller) {
     egui::Window::new("Nullus")
         .default_open(true)
         .max_width(1000.0)
@@ -11,7 +13,7 @@ pub fn nullus_gui(ctx: &Context) {
         .show(&ctx, |ui| {
             if ui.add(egui::Button::new("Open")).clicked() {}
             ui.end_row();
-
             // proto_scene.egui(ui);
         });
+    controller.process_events(ctx);
 }

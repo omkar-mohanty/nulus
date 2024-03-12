@@ -9,6 +9,10 @@ use wgpu::{CommandEncoder, Device, Queue, TextureFormat, TextureView};
 use winit::event::WindowEvent;
 use winit::window::Window;
 
+pub trait Controller {
+    fn process_events(&self, ctx: &egui::Context);
+}
+
 pub struct EguiRenderer {
     pub context: Context,
     state: State,

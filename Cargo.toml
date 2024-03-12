@@ -17,10 +17,11 @@ log = "0.4.20"
 egui-winit = "0.25.0"
 egui = "0.25.0"
 tokio = { version = "1.36.0", features = ["full"] }
+cgmath = "0.18"
+
 [dependencies.image]
 version = "0.24"
 default-features = false
 features = ["png", "jpeg"]
-
 [profile.dev]
 opt-level = 1
