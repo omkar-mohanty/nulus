@@ -1,7 +1,5 @@
 use std::ops::Range;
 
-use wgpu::util::RenderEncoder;
-
 use crate::texture;
 
 pub trait Vertex {
@@ -42,6 +40,13 @@ pub trait DrawModel<'a> {
         instances: Range<u32>,
         camera_bind_group: &'a wgpu::BindGroup,
     );
+    fn draw_model(&mut self, model: &'a Model, camera_bind_group: &'a wgpu::BindGroup);
+    fn draw_model_instanced(
+        &mut self,
+        model: &'a Model,
+        instances: Range<u32>,
+        camera_bind_group: &'a wgpu::BindGroup,
+    );
 }
 impl<'a, 'b> DrawModel<'b> for wgpu::RenderPass<'a>
 where
@@ -68,6 +73,22 @@ where
         self.set_bind_group(0, &material.bind_group, &[]);
         self.set_bind_group(1, camera_bind_group, &[]);
         self.draw_indexed(0..mesh.num_elements, 0, instances);
+    }
+
+    fn draw_model(&mut self, model: &'b Model, camera_bind_group: &'b wgpu::BindGroup) {
+        self.draw_model_instanced(model, 0..1, camera_bind_group)
+    }
+
+    fn draw_model_instanced(
+        &mut self,
+        model: &'b Model,
+        instances: Range<u32>,
+        camera_bind_group: &'b wgpu::BindGroup,
+    ) {
+        for m in &model.meshes {
+            let material = &model.materials[m.material];
+            self.draw_mesh_instanced(m, material, instances.clone(), camera_bind_group);
+        }
     }
 }
 
