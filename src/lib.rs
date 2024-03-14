@@ -3,8 +3,8 @@ mod gui;
 mod instance;
 mod integration;
 mod model;
-mod texture;
 mod resource;
+mod texture;
 
 use std::{
     iter,
@@ -20,7 +20,7 @@ use egui_wgpu::wgpu;
 use gui::nullus_gui;
 use instance::InstanceRaw;
 use integration::{Controller, EguiRenderer};
-use wgpu::util::DeviceExt;
+use wgpu::util::{DeviceExt, RenderEncoder};
 use wgpu::TextureViewDescriptor;
 use winit::{
     event::*,
@@ -65,6 +65,7 @@ struct State {
     instance_buffer: wgpu::Buffer,
     instances: Vec<Instance>,
     depth_texture: texture::Texture,
+    obj_model: model::Model,
 }
 
 impl State {
@@ -224,18 +225,16 @@ impl State {
             label: Some("camera_bind_group"),
         });
 
+        const SPACE_BETWEEN: f32 = 3.0;
         let instances = (0..NUM_INSTANCES_PER_ROW)
             .flat_map(|z| {
                 (0..NUM_INSTANCES_PER_ROW).map(move |x| {
-                    let position = cgmath::Vector3 {
-                        x: x as f32,
-                        y: 0.0,
-                        z: z as f32,
-                    } - INSTANCE_DISPLACEMENT;
+                    let x = SPACE_BETWEEN * (x as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
+                    let z = SPACE_BETWEEN * (z as f32 - NUM_INSTANCES_PER_ROW as f32 / 2.0);
+
+                    let position = cgmath::Vector3 { x, y: 0.0, z };
 
                     let rotation = if position.is_zero() {
-                        // this is needed so an object at (0, 0, 0) won't get scaled to zero
-                        // as Quaternions can affect scale if they're not created correctly
                         cgmath::Quaternion::from_axis_angle(
                             cgmath::Vector3::unit_z(),
                             cgmath::Deg(0.0),
@@ -325,6 +324,11 @@ impl State {
             &window,       // winit Window
         );
 
+        let obj_model =
+            resource::load_model("cube.obj", &device, &queue, &texture_bind_group_layout)
+                .await
+                .unwrap();
+
         Self {
             depth_texture,
             surface,
@@ -342,6 +346,7 @@ impl State {
             camera_buffer,
             instance_buffer,
             instances,
+            obj_model,
             camera_controller: Arc::new(RwLock::new(CameraController::new(0.2))),
         }
     }
@@ -428,10 +433,18 @@ impl State {
                 timestamp_writes: None,
             });
 
-            render_pass.set_pipeline(&self.render_pipeline);
-            render_pass.set_bind_group(0, &self.texture_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
             render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
+            render_pass.set_pipeline(&self.render_pipeline);
+
+            use model::DrawModel;
+            let mesh = &self.obj_model.meshes[0];
+            let material = &self.obj_model.materials[mesh.material];
+            render_pass.draw_mesh_instanced(
+                mesh,
+                material,
+                0..self.instances.len() as u32,
+                &self.camera_bind_group,
+            );
         }
 
         let screen_descriptor = ScreenDescriptor {

@@ -18,7 +18,10 @@ egui-winit = "0.25.0"
 egui = "0.25.0"
 tokio = { version = "1.36.0", features = ["full"] }
 cgmath = "0.18"
-
+tobj = { version = "3.2.1", features = [
+    "async",
+]}
+ 
 [dependencies.image]
 version = "0.24"
 default-features = false

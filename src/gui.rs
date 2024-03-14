@@ -22,8 +22,7 @@ pub fn nullus_gui(ctx: &Context, controller: &dyn Controller) {
         .resizable(true)
         .show(ctx, |ui| {
             let mut input = String::new();
-            if ui.add(egui::RadioButton::new(false, "Console")).clicked() {
-            }
+            if ui.add(egui::RadioButton::new(false, "Console")).clicked() {}
         });
     controller.process_events(ctx);
 }

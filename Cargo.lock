@@ -1168,6 +1168,7 @@ dependencies = [
  "glob",
  "image",
  "log",
+ "tobj",
  "tokio",
  "wgpu",
  "winit",
@@ -1783,6 +1784,15 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tobj"
+version = "3.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57381207291289bad19de63acd3fbf5948ff99b2868116c367b7224c37d55f90"
+dependencies = [
+ "ahash",
+]
 
 [[package]]
 name = "tokio"
