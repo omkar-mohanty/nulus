@@ -25,7 +25,6 @@ pub struct Model {
     pub materials: Vec<Material>,
 }
 
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct ModelVertex {
@@ -236,5 +235,3 @@ where
         }
     }
 }
-
-
