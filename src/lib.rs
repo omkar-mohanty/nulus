@@ -22,7 +22,7 @@ use gui::nullus_gui;
 use instance::InstanceRaw;
 use integration::{Controller, EguiRenderer};
 use light::LightUniform;
-use wgpu::util::DeviceExt;
+use wgpu::util::{DeviceExt, RenderEncoder};
 use wgpu::TextureViewDescriptor;
 use winit::{
     event::*,
@@ -128,6 +128,7 @@ struct State {
     light_uniform: LightUniform,
     light_buffer: wgpu::Buffer,
     light_bind_group: wgpu::BindGroup,
+    light_render_pipeline: wgpu::RenderPipeline,
 }
 
 impl State {
@@ -192,14 +193,6 @@ impl State {
 
         surface.configure(&device, &config);
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("Shader"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
-        });
-
-        let bytes = include_bytes!("happy-tree.png");
-        let texture = texture::Texture::from_bytes(&device, &queue, bytes, "Image Bytes").unwrap();
-
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("Texture Bind Group Layout"),
@@ -225,20 +218,6 @@ impl State {
                 ],
             });
 
-        let texture_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Texture Bind Group"),
-            layout: &texture_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&texture.view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&texture.sampler),
-                },
-            ],
-        });
 
         let camera = Camera {
             // position the camera 1 unit up and 2 units back
@@ -373,7 +352,7 @@ impl State {
                 &layout,
                 config.format,
                 Some(texture::Texture::DEPTH_FORMAT),
-                &[model::ModelVertex::desc()],
+                &[ModelVertex::desc()],
                 shader,
             )
         };
@@ -381,7 +360,7 @@ impl State {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&texture_bind_group_layout, &camera_bind_group_layout],
+                bind_group_layouts: &[&texture_bind_group_layout, &camera_bind_group_layout, &light_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -434,6 +413,7 @@ impl State {
             light_buffer,
             light_uniform,
             light_bind_group,
+            light_render_pipeline,
             camera_controller: Arc::new(RwLock::new(CameraController::new(0.2))),
         }
     }
@@ -531,6 +511,15 @@ impl State {
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
+
+            use crate::model::DrawLight;
+
+            render_pass.set_pipeline(&self.light_render_pipeline);
+            render_pass.draw_light_model(
+                &self.obj_model,
+                &self.camera_bind_group,
+                &self.light_bind_group,
+            );
 
             render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
             render_pass.set_pipeline(&self.render_pipeline);
